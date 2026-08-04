@@ -1,5 +1,12 @@
 # Data Model
 
+## 현재 구현
+
+- `demo_users`: 데모 학생 이름, PIN 해시, 누적 XP.
+- `learning_sessions`: 만료 시각이 있는 불투명 세션 토큰.
+- `mission_progress`: 사용자·미션 복합 기본키, 코드, 상태, 시도 횟수, 완료/갱신 시각.
+- 세션의 `(user_id, expires_at)`와 진행 기록의 `(user_id, status)` 조회 인덱스를 사용한다.
+
 ## 예정 테이블
 
 - `profiles(id, role, display_name, avatar_key, current_level, total_xp, created_at, updated_at)`

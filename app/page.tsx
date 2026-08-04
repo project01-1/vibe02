@@ -13,10 +13,10 @@ import {
   LockKeyhole,
   Play,
   Save,
-  Sparkles,
   Trophy,
   Zap,
 } from "lucide-react";
+import { MotionHero } from "@/components/landing/MotionHero";
 
 const steps = [
   [Blocks, "블록을 읽어요", "익숙한 명령의 뜻부터 확인해요."],
@@ -56,58 +56,13 @@ export default function Home() {
             <a href="#roadmap">탐험 지도</a>
           </nav>
           <div className="header-actions">
-            <button className="text-button" type="button">로그인</button>
+            <Link className="text-button" href="/mission">로그인</Link>
             <Link className="button button-small button-outline" href="/mission">무료 체험</Link>
           </div>
         </div>
       </header>
 
-      <section className="hero">
-        <div className="hero-glow" aria-hidden="true" />
-        <div className="shell hero-grid">
-          <div className="hero-copy">
-            <div className="eyebrow"><Sparkles size={15} /> 블록코딩 다음 단계</div>
-            <h1>블록으로 이해하고,<br /><span>Python으로 완성해요.</span></h1>
-            <p>익숙한 블록을 실제 코드로 바꾸고, 로봇과 함께 짧은 미션을 해결해 보세요. 첫 Python 성공까지 단 5분이면 충분해요.</p>
-            <div className="hero-actions">
-              <Link className="button button-primary" href="/mission"><Play size={18} fill="currentColor" /> 로그인 없이 첫 미션 시작</Link>
-              <a className="button button-ghost" href="#method">어떻게 배우나요? <ArrowRight size={18} /></a>
-            </div>
-            <div className="trust-row">
-              <span><Check size={15} /> 설치 없음</span>
-              <span><Check size={15} /> 3~5분 체험</span>
-              <span><Check size={15} /> 안전한 코드 검증</span>
-            </div>
-          </div>
-
-          <div className="hero-lab" aria-label="블록에서 Python으로 전환하는 예시">
-            <div className="lab-topbar">
-              <span><span className="status-dot" /> LAB 01 · 이동 명령</span>
-              <span className="mini-xp"><Zap size={13} fill="currentColor" /> +40 XP</span>
-            </div>
-            <div className="compare-grid">
-              <div className="compare-pane block-pane">
-                <div className="pane-label"><Blocks size={15} /> BLOCK</div>
-                <div className="block-command"><span>↻</span><div>3번 반복하기</div></div>
-                <div className="block-command nested"><span>➜</span><div>앞으로 이동</div></div>
-              </div>
-              <div className="flow-arrow" aria-hidden="true"><ChevronRight size={20} /></div>
-              <div className="compare-pane code-pane">
-                <div className="pane-label"><Code2 size={15} /> PYTHON</div>
-                <pre><span className="code-purple">for</span> i <span className="code-purple">in</span> <span className="code-blue">range</span>(<span className="code-gold">3</span>):{`\n`}  <span className="code-blue">move</span>()</pre>
-                <div className="run-line"><span>실행 준비 완료</span><span className="play-circle"><Play size={13} fill="currentColor" /></span></div>
-              </div>
-            </div>
-            <div className="robot-track">
-              <span className="track-start">START</span>
-              <div className="track-line"><i /><i /><i /><i /></div>
-              <div className="robot-mini"><Bot size={24} /><span /></div>
-              <div className="energy-cell"><Zap size={18} fill="currentColor" /></div>
-            </div>
-            <div className="guide-message"><span><Bot size={19} /></span><p><b>루미의 한마디</b>반복 횟수만 바꾸면 로봇이 더 멀리 갈 수 있어!</p></div>
-          </div>
-        </div>
-      </section>
+      <MotionHero />
 
       <section className="section method-section" id="method">
         <div className="shell">
@@ -187,7 +142,7 @@ export default function Home() {
             <span><Check size={15} /> 경험치와 배지 획득</span>
             <span><Check size={15} /> 다음 학습 지점에서 이어하기</span>
           </div>
-          <button className="button button-light" type="button">로그인하고 기록 저장 <ArrowRight size={17} /></button>
+          <Link className="button button-light" href="/mission">로그인하고 기록 저장 <ArrowRight size={17} /></Link>
         </div>
       </section>
 
