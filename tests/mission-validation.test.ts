@@ -10,10 +10,13 @@ describe("validateMissionCode", () => {
     const result = validateMissionCode("for i in range(2):\n    move()");
     expect(result.status).toBe("too-short");
     expect(result.message).toContain("1칸");
+    expect(result.focusLine).toBe(1);
   });
 
   it("rejects arbitrary Python instead of executing it", () => {
-    expect(validateMissionCode("import os\nos.system('echo unsafe')").status).toBe("invalid");
+    const result = validateMissionCode("import os\nos.system('echo unsafe')");
+    expect(result.status).toBe("invalid");
+    expect(result.focusLine).toBe(2);
   });
 });
 

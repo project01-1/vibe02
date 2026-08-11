@@ -23,6 +23,9 @@ import {
 } from "lucide-react";
 import { validateMissionCode, type MissionResult } from "@/lib/mission-validation";
 import { getMission, missions } from "@/lib/missions";
+import { MissionConceptPanel } from "@/components/mission/MissionConceptPanel";
+import { PythonLearningEditor } from "@/components/mission/PythonLearningEditor";
+import { LumiMissionStage } from "@/components/mission/LumiMissionStage";
 
 type LearningUser = { id: string; displayName: string; totalXp: number };
 type AuthMode = "login" | "signup";
@@ -39,6 +42,7 @@ export function MissionLab() {
   const [code, setCode] = useState(getMission(1).starterCode);
   const [result, setResult] = useState<MissionResult | null>(null);
   const [running, setRunning] = useState(false);
+  const [simulationSteps, setSimulationSteps] = useState(0);
   const [hintOpen, setHintOpen] = useState(false);
   const [user, setUser] = useState<LearningUser | null>(null);
   const [progress, setProgress] = useState<SavedProgress[]>([]);
@@ -59,6 +63,7 @@ export function MissionLab() {
   );
   const completedCount = completedIds.size;
   const success = result?.status === "success";
+  const missionOnePhase = success ? 4 : running || result ? 3 : code !== getMission(1).starterCode ? 2 : 1;
   const robotSteps = useMemo(() => {
     if (!result || result.status === "invalid") return 0;
     return Math.min(result.steps, 3);
@@ -80,6 +85,7 @@ export function MissionLab() {
         const saved = data.progress.find((item) => item.mission_id === targetId);
         setMissionId(targetId);
         setCode(saved?.code ?? getMission(targetId).starterCode);
+        setSimulationSteps(0);
       }
     } finally {
       setSessionReady(true);
@@ -98,6 +104,7 @@ export function MissionLab() {
     setResult(null);
     setHintOpen(false);
     setSaveState("idle");
+    setSimulationSteps(0);
   }
 
   async function persistProgress(countAttempt: boolean) {
@@ -124,15 +131,23 @@ export function MissionLab() {
     return true;
   }
 
-  function runMission() {
+  function executeMission(shouldPersist: boolean) {
+    const nextResult = validateMissionCode(code, missionId);
     setRunning(true);
     setResult(null);
+    setSimulationSteps(0);
     window.setTimeout(() => {
-      const nextResult = validateMissionCode(code, missionId);
+      setSimulationSteps(nextResult.status === "invalid" ? 0 : Math.min(nextResult.steps, 3));
+    }, 80);
+    window.setTimeout(() => {
       setResult(nextResult);
       setRunning(false);
-      if (user) void persistProgress(true);
-    }, 650);
+      if (user && shouldPersist) void persistProgress(true);
+    }, 900);
+  }
+
+  function runMission() {
+    executeMission(true);
   }
 
   function resetMission() {
@@ -140,6 +155,7 @@ export function MissionLab() {
     setResult(null);
     setHintOpen(false);
     setSaveState("idle");
+    setSimulationSteps(0);
   }
 
   async function handleAuth(event: FormEvent<HTMLFormElement>) {
@@ -171,6 +187,7 @@ export function MissionLab() {
     setCode(getMission(1).starterCode);
     setResult(null);
     setSaveState("idle");
+    setSimulationSteps(0);
   }
 
   const lineNumbers = Array.from({ length: Math.max(2, code.split("\n").length) }, (_, index) => index + 1);
@@ -205,6 +222,24 @@ export function MissionLab() {
         </div>
       </nav>
 
+      {missionId === 1 ? (
+        <div className="mission-one-workspace">
+          <MissionConceptPanel mission={mission} phase={missionOnePhase} hintOpen={hintOpen} onToggleHint={() => setHintOpen((value) => !value)} />
+          <PythonLearningEditor code={code} onCodeChange={(value) => { setCode(value); setResult(null); setSaveState("idle"); setSimulationSteps(0); }} result={result} saveState={saveState} />
+          <LumiMissionStage steps={simulationSteps} running={running} result={result} completed={completedIds.has(missionId)} reward={mission.reward} />
+          <footer className="mission-command-bar" aria-label="미션 명령">
+            <div className="command-help"><span>CHANGE</span><p><b>숫자를 바꾸고 실행해 보세요.</b> 준비되면 제출해 학습 기록을 저장해요.</p></div>
+            <div className="command-actions">
+              <button type="button" className="button button-ghost" onClick={resetMission}><RotateCcw size={17} /> 초기화</button>
+              {user && <button type="button" className="button button-ghost" onClick={() => void persistProgress(false)} disabled={saveState === "saving"}><Save size={17} /> 저장</button>}
+              <button type="button" className="button button-outline run-preview-button" onClick={() => executeMission(false)} disabled={running}><Play size={17} fill="currentColor" /> {running ? "실행 중..." : "실행"}</button>
+              <button type="button" className="button button-primary submit-mission-button" onClick={() => executeMission(true)} disabled={running}><CheckCircle2 size={18} /> 제출</button>
+              {success && !user && <button type="button" className="button button-light" onClick={() => setLoginOpen(true)}>로그인하고 저장</button>}
+              {success && user && completedIds.has(missionId) && <button type="button" className="button button-light" onClick={() => selectMission(2)}>다음 단계 <ChevronRight size={17} /></button>}
+            </div>
+          </footer>
+        </div>
+      ) : (
       <div className="mission-layout">
         <aside className="instruction-panel">
           <div className="panel-kicker"><Sparkles size={14} /> 오늘의 실험</div>
@@ -252,6 +287,7 @@ export function MissionLab() {
           {success && user && missionId === missions.length && <div className="course-complete"><CheckCircle2 size={20} /><div><b>기초 코스 완료!</b><span>반복문·변수·조건문을 모두 익혔어요.</span></div></div>}
         </section>
       </div>
+      )}
 
       {loginOpen && (
         <div className="login-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setLoginOpen(false); }}>

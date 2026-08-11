@@ -1,5 +1,14 @@
 # Python Future Lab — Project Context
 
+## 2026-08-11 Mission 01 Step 1 UX 리팩터링 계획
+
+- 핵심 학습 UX를 **개념 이해 중심 60% + 시각적 실행 피드백 40%**로 설계한다. 특정 서비스의 레이아웃·그래픽·문구는 복제하지 않는다.
+- 학습 모델은 **SEE → CONNECT → CHANGE → RUN → CODE**이며, 레벨이 오를수록 블록 안내를 60%에서 0%까지 줄인다.
+- 첫 구현 범위는 Mission 01 `반복 이동`만이다. Mission 02·03의 콘텐츠와 동작은 기존 상태를 유지한다.
+- 보호 경계: 로그인·회원가입·로그아웃, Supabase 세션, `/api/progress`, 사용자별 코드·진도·XP, RLS와 기존 migration은 변경하지 않는다.
+- DB 변경은 필요하지 않다. 기존 `missionId`, 코드 문자열, 완료 상태, 시도 횟수와 XP 계약을 그대로 사용한다.
+- 수정 대상: `components/mission/MissionLab.tsx`, 신규 Mission 01 학습 UI 컴포넌트, `lib/mission-validation.ts`, `app/globals.css`, 미션 검증 테스트와 프로젝트 문서.
+
 - 2026-08-11 Supabase 업데이트: 서울 리전의 `Python Future Lab` 프로젝트를 연결하고 Auth·PostgreSQL·RLS 기반 회원/진도 저장으로 전환했다. 회원가입은 이름·고유 휴대폰 번호·숫자 4자리 PIN, 로그인은 고유 학생 이름·PIN을 사용하며 SMS 확인은 사용하지 않는다.
 - 현재 학습 범위: 반복문 → 변수 → 조건문의 3단계 미션. 이전 미션 완료 후 다음 단계가 해금된다.
 
