@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-08-11 — Vercel 배포는 Next.js 네이티브 빌드를 사용
+
+- 배경: 기존 기본 빌드는 Cloudflare Worker용 `dist`를 만들고 API가 `cloudflare:workers`에 의존해 Vercel Next.js 빌드가 실패했다.
+- 결정: 기본 `dev/build/start`를 Next.js로 전환하고 `vercel.json`으로 프레임워크를 명시한다. Sites용 vinext 명령은 별도 스크립트로 보존한다.
+- 영향: 데모 진도는 외부 DB 없이 서명 쿠키에 저장되므로 같은 브라우저에서만 이어진다. 운영용 다중 기기 계정은 별도 관리형 DB가 필요하다.
+
 ## 2026-08-04 — 데모 계정은 서버 세션과 D1을 사용
 
 - 배경: 사용자가 이름 3글자와 PIN 4자리로 로그인하고 학습 기록을 이어가길 요청했다.

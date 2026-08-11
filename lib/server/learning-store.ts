@@ -1,16 +1,13 @@
-import { env } from "cloudflare:workers";
-import { getMission } from "@/lib/missions";
+import { NextResponse } from "next/server";
+import { getMission } from "../missions";
 
 export const DEMO_NAME = "김하늘";
 export const DEMO_PIN = "2580";
 export const SESSION_COOKIE = "pfl_session";
 
-type DemoUserRow = {
-  id: string;
-  display_name: string;
-  pin_hash: string;
-  total_xp: number;
-};
+const SESSION_DAYS = 7;
+const SESSION_VERSION = 1;
+const FALLBACK_DEMO_SECRET = "python-future-lab-vercel-demo-session-v1";
 
 export type ProgressRow = {
   mission_id: number;
@@ -20,44 +17,61 @@ export type ProgressRow = {
   updated_at: string;
 };
 
-function getDatabase() {
-  const bindings = env as typeof env & { DB?: D1Database };
-  if (!bindings.DB) throw new Error("학습 기록 저장소가 연결되지 않았습니다.");
-  return bindings.DB;
+export type LearningState = {
+  version: number;
+  userId: string;
+  displayName: string;
+  totalXp: number;
+  expiresAt: string;
+  progress: ProgressRow[];
+};
+
+function getSecret() {
+  return process.env.PFL_SESSION_SECRET ?? FALLBACK_DEMO_SECRET;
 }
 
-export async function initializeLearningStore() {
-  const db = getDatabase();
-  await db.batch([
-    db.prepare(`CREATE TABLE IF NOT EXISTS demo_users (
-      id TEXT PRIMARY KEY,
-      display_name TEXT NOT NULL UNIQUE,
-      pin_hash TEXT NOT NULL,
-      total_xp INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL
-    )`),
-    db.prepare(`CREATE TABLE IF NOT EXISTS learning_sessions (
-      token TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      expires_at TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      FOREIGN KEY (user_id) REFERENCES demo_users(id) ON DELETE CASCADE
-    )`),
-    db.prepare(`CREATE TABLE IF NOT EXISTS mission_progress (
-      user_id TEXT NOT NULL,
-      mission_id INTEGER NOT NULL CHECK (mission_id BETWEEN 1 AND 3),
-      status TEXT NOT NULL CHECK (status IN ('in_progress', 'completed')),
-      code TEXT NOT NULL,
-      attempts INTEGER NOT NULL DEFAULT 0,
-      completed_at TEXT,
-      updated_at TEXT NOT NULL,
-      PRIMARY KEY (user_id, mission_id),
-      FOREIGN KEY (user_id) REFERENCES demo_users(id) ON DELETE CASCADE
-    )`),
-    db.prepare("CREATE INDEX IF NOT EXISTS idx_learning_sessions_user_expiry ON learning_sessions(user_id, expires_at)"),
-    db.prepare("CREATE INDEX IF NOT EXISTS idx_mission_progress_user_status ON mission_progress(user_id, status)"),
-  ]);
-  return db;
+function toBase64Url(bytes: Uint8Array) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+}
+
+function fromBase64Url(value: string) {
+  const normalized = value.replaceAll("-", "+").replaceAll("_", "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  const binary = atob(padded);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+async function getSigningKey() {
+  return crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(getSecret()),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"],
+  );
+}
+
+async function encodeState(state: LearningState) {
+  const payload = toBase64Url(new TextEncoder().encode(JSON.stringify(state)));
+  const signature = await crypto.subtle.sign("HMAC", await getSigningKey(), new TextEncoder().encode(payload));
+  return `${payload}.${toBase64Url(new Uint8Array(signature))}`;
+}
+
+async function decodeState(token: string): Promise<LearningState | null> {
+  const [payload, signature] = token.split(".");
+  if (!payload || !signature) return null;
+  const valid = await crypto.subtle.verify(
+    "HMAC",
+    await getSigningKey(),
+    fromBase64Url(signature),
+    new TextEncoder().encode(payload),
+  );
+  if (!valid) return null;
+  const parsed = JSON.parse(new TextDecoder().decode(fromBase64Url(payload))) as LearningState;
+  if (parsed.version !== SESSION_VERSION || new Date(parsed.expiresAt).getTime() <= Date.now()) return null;
+  return parsed;
 }
 
 export async function hashPin(pin: string) {
@@ -66,15 +80,15 @@ export async function hashPin(pin: string) {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-export async function ensureDemoUser() {
-  const db = await initializeLearningStore();
-  const now = new Date().toISOString();
-  const pinHash = await hashPin(DEMO_PIN);
-  await db.prepare(`INSERT INTO demo_users (id, display_name, pin_hash, total_xp, created_at)
-    VALUES (?, ?, ?, 0, ?)
-    ON CONFLICT(id) DO UPDATE SET display_name = excluded.display_name, pin_hash = excluded.pin_hash`)
-    .bind("demo-kimhaneul", DEMO_NAME, pinHash, now).run();
-  return db;
+export function createLearningState(): LearningState {
+  return {
+    version: SESSION_VERSION,
+    userId: "demo-kimhaneul",
+    displayName: DEMO_NAME,
+    totalXp: 0,
+    expiresAt: new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000).toISOString(),
+    progress: [],
+  };
 }
 
 export function readSessionToken(request: Request) {
@@ -82,54 +96,53 @@ export function readSessionToken(request: Request) {
   return cookie.split(";").map((part) => part.trim()).find((part) => part.startsWith(`${SESSION_COOKIE}=`))?.slice(SESSION_COOKIE.length + 1) ?? null;
 }
 
-export async function getAuthenticatedUser(request: Request) {
+export async function readLearningState(request: Request) {
   const token = readSessionToken(request);
   if (!token) return null;
-  const db = await initializeLearningStore();
-  const now = new Date().toISOString();
-  const user = await db.prepare(`SELECT u.id, u.display_name, u.pin_hash, u.total_xp
-    FROM demo_users u JOIN learning_sessions s ON s.user_id = u.id
-    WHERE s.token = ? AND s.expires_at > ?`).bind(token, now).first<DemoUserRow>();
-  return user ? { id: user.id, displayName: user.display_name, totalXp: user.total_xp, token } : null;
+  try {
+    return await decodeState(token);
+  } catch {
+    return null;
+  }
 }
 
-export async function getProgress(userId: string) {
-  const db = await initializeLearningStore();
-  const result = await db.prepare(`SELECT mission_id, status, code, attempts, updated_at
-    FROM mission_progress WHERE user_id = ? ORDER BY mission_id`).bind(userId).all<ProgressRow>();
-  return result.results;
+export async function setLearningCookie(response: NextResponse, state: LearningState, request: Request) {
+  response.cookies.set(SESSION_COOKIE, await encodeState(state), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: new URL(request.url).protocol === "https:",
+    path: "/",
+    expires: new Date(state.expiresAt),
+  });
+  return response;
 }
 
-export async function saveProgress(input: {
-  userId: string;
+export function clearLearningCookie(response: NextResponse) {
+  response.cookies.set(SESSION_COOKIE, "", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 0 });
+  return response;
+}
+
+export function updateProgress(state: LearningState, input: {
   missionId: number;
   code: string;
   completed: boolean;
   countAttempt: boolean;
 }) {
-  const db = await initializeLearningStore();
-  const previous = await db.prepare("SELECT status FROM mission_progress WHERE user_id = ? AND mission_id = ?")
-    .bind(input.userId, input.missionId).first<{ status: string }>();
-  const newlyCompleted = input.completed && previous?.status !== "completed";
-  const status = input.completed || previous?.status === "completed" ? "completed" : "in_progress";
+  const existing = state.progress.find((item) => item.mission_id === input.missionId);
+  const newlyCompleted = input.completed && existing?.status !== "completed";
   const now = new Date().toISOString();
-  const completedAt = status === "completed" ? now : null;
-  const statements = [
-    db.prepare(`INSERT INTO mission_progress (user_id, mission_id, status, code, attempts, completed_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(user_id, mission_id) DO UPDATE SET
-        status = CASE WHEN mission_progress.status = 'completed' THEN 'completed' ELSE excluded.status END,
-        code = excluded.code,
-        attempts = mission_progress.attempts + excluded.attempts,
-        completed_at = COALESCE(mission_progress.completed_at, excluded.completed_at),
-        updated_at = excluded.updated_at`)
-      .bind(input.userId, input.missionId, status, input.code, input.countAttempt ? 1 : 0, completedAt, now),
-  ];
-  if (newlyCompleted) {
-    statements.push(db.prepare("UPDATE demo_users SET total_xp = total_xp + ? WHERE id = ?")
-      .bind(getMission(input.missionId).reward, input.userId));
-  }
-  await db.batch(statements);
-  const user = await db.prepare("SELECT total_xp FROM demo_users WHERE id = ?").bind(input.userId).first<{ total_xp: number }>();
-  return { progress: await getProgress(input.userId), totalXp: user?.total_xp ?? 0 };
+  const nextProgress: ProgressRow = {
+    mission_id: input.missionId,
+    status: input.completed || existing?.status === "completed" ? "completed" : "in_progress",
+    code: input.code,
+    attempts: (existing?.attempts ?? 0) + (input.countAttempt ? 1 : 0),
+    updated_at: now,
+  };
+  return {
+    ...state,
+    totalXp: state.totalXp + (newlyCompleted ? getMission(input.missionId).reward : 0),
+    expiresAt: new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000).toISOString(),
+    progress: [...state.progress.filter((item) => item.mission_id !== input.missionId), nextProgress]
+      .sort((a, b) => a.mission_id - b.mission_id),
+  };
 }

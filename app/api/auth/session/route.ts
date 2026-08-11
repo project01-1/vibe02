@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedUser, getProgress } from "@/lib/server/learning-store";
+import { readLearningState } from "@/lib/server/learning-store";
 
 export async function GET(request: Request) {
-  const user = await getAuthenticatedUser(request);
-  if (!user) return NextResponse.json({ user: null, progress: [] });
-  const progress = await getProgress(user.id);
+  const state = await readLearningState(request);
+  if (!state) return NextResponse.json({ user: null, progress: [] });
   return NextResponse.json({
-    user: { id: user.id, displayName: user.displayName, totalXp: user.totalXp },
-    progress,
+    user: { id: state.userId, displayName: state.displayName, totalXp: state.totalXp },
+    progress: state.progress,
   });
 }
