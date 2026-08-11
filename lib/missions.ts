@@ -1,5 +1,6 @@
 export type MissionDefinition = {
   id: number;
+  databaseId: string;
   title: string;
   shortTitle: string;
   headline: string;
@@ -18,6 +19,7 @@ export type MissionDefinition = {
 export const missions: MissionDefinition[] = [
   {
     id: 1,
+    databaseId: "00000000-0000-4000-8000-000000001001",
     title: "에너지 셀을 회수하라",
     shortTitle: "반복 이동",
     headline: "루미를 앞으로",
@@ -34,6 +36,7 @@ export const missions: MissionDefinition[] = [
   },
   {
     id: 2,
+    databaseId: "00000000-0000-4000-8000-000000001002",
     title: "에너지 코어를 충전하라",
     shortTitle: "변수 충전",
     headline: "에너지 변수에",
@@ -50,6 +53,7 @@ export const missions: MissionDefinition[] = [
   },
   {
     id: 3,
+    databaseId: "00000000-0000-4000-8000-000000001003",
     title: "보안 문을 통과하라",
     shortTitle: "조건 판단",
     headline: "문이 열렸을 때만",

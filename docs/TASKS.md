@@ -19,12 +19,18 @@
 - [x] `/mission` 코드 편집·안전 검증·로봇 피드백 구현
 - [x] 단위/렌더 테스트와 프로젝트 문서 작성
 
+## 2026-08-11 Supabase 완료
+
+- [x] Python Future Lab 프로젝트 연결과 migration 적용
+- [x] profiles/learning_paths/missions/progress/badges 스키마와 RLS
+- [x] 이름·고유 휴대폰 번호·4자리 PIN 회원가입/로그인
+- [x] 서버 미션 검증과 원자적 진도·XP 저장
+- [x] 생성 DB 타입과 Next.js Supabase 클라이언트
+
 ## 다음 우선순위
 
-- [ ] Supabase 프로젝트와 환경변수 연결
-- [ ] profiles/missions/progress SQL migration과 RLS 테스트
-- [ ] 이메일 로그인·별명 분리·세션 처리
-- [ ] 성공 결과 저장과 대시보드 이어하기
+- [ ] Vercel Supabase 비밀 환경변수 등록과 프로덕션 E2E
+- [ ] 성공 결과 저장과 학생 대시보드 이어하기
 - [ ] Playwright 모바일/태블릿/데스크톱 E2E
 
 ## 확인 필요

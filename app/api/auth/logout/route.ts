@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { clearLearningCookie } from "@/lib/server/learning-store";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function POST() {
-  const response = NextResponse.json({ ok: true });
-  return clearLearningCookie(response);
+  const supabase = await createSupabaseServerClient();
+  await supabase.auth.signOut();
+  return NextResponse.json({ ok: true });
 }

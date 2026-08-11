@@ -1,10 +1,11 @@
 # Data Model
 
-## 현재 Vercel 구현
+## 현재 Supabase 구현
 
-- HMAC 서명된 HttpOnly 쿠키에 데모 사용자 ID, 누적 XP, 미션별 코드·상태·시도 횟수·갱신 시각을 저장한다.
-- 서명 검증에 실패하거나 7일 만료 시 세션을 무효화한다.
-- 쿠키 크기 안에서 동작하는 3단계 데모 전용 구조이며, 다중 기기 동기화가 필요할 때 관리형 데이터베이스로 전환한다.
+- Supabase Auth의 `auth.users.phone`을 정규화된 고유 로그인 ID로 사용한다.
+- `profiles`, `learning_paths`, `missions`, `mission_steps`, `user_mission_progress`, `badges`, `user_badges`를 PostgreSQL에 저장한다.
+- `auth_rate_limits`는 로그인 실패와 임시 잠금을 서버에서 관리한다.
+- 진도와 XP는 `save_mission_progress` RPC가 원자적으로 저장한다.
 
 ## 예정 테이블
 

@@ -1,0 +1,3 @@
+-- Production learning content is versioned in migrations so every linked
+-- environment receives the same published baseline. Keep this file for
+-- local-only fixtures that should run after `supabase db reset`.

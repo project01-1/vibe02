@@ -25,6 +25,7 @@ import { validateMissionCode, type MissionResult } from "@/lib/mission-validatio
 import { getMission, missions } from "@/lib/missions";
 
 type LearningUser = { id: string; displayName: string; totalXp: number };
+type AuthMode = "login" | "signup";
 type SavedProgress = {
   mission_id: number;
   status: "in_progress" | "completed";
@@ -42,8 +43,11 @@ export function MissionLab() {
   const [user, setUser] = useState<LearningUser | null>(null);
   const [progress, setProgress] = useState<SavedProgress[]>([]);
   const [loginOpen, setLoginOpen] = useState(false);
-  const [loginName, setLoginName] = useState("김하늘");
-  const [loginPin, setLoginPin] = useState("2580");
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
+  const [loginName, setLoginName] = useState("");
+  const [loginPhone, setLoginPhone] = useState("");
+  const [loginPin, setLoginPin] = useState("");
+  const [pinConfirm, setPinConfirm] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -97,12 +101,12 @@ export function MissionLab() {
     setSaveState("idle");
   }
 
-  async function persistProgress(completed: boolean, countAttempt: boolean) {
+  async function persistProgress(countAttempt: boolean) {
     setSaveState("saving");
     const response = await fetch("/api/progress", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ missionId, code, completed, countAttempt }),
+      body: JSON.stringify({ missionId, code, countAttempt }),
     });
     if (response.status === 401) {
       setSaveState("idle");
@@ -128,7 +132,7 @@ export function MissionLab() {
       const nextResult = validateMissionCode(code, missionId);
       setResult(nextResult);
       setRunning(false);
-      if (user) void persistProgress(nextResult.status === "success", true);
+      if (user) void persistProgress(true);
     }, 650);
   }
 
@@ -139,14 +143,18 @@ export function MissionLab() {
     setSaveState("idle");
   }
 
-  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+  async function handleAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoginError("");
+    if (authMode === "signup" && loginPin !== pinConfirm) {
+      setLoginError("PIN 확인 값이 일치하지 않아요.");
+      return;
+    }
     setLoginLoading(true);
-    const response = await fetch("/api/auth/login", {
+    const response = await fetch(authMode === "signup" ? "/api/auth/signup" : "/api/auth/login", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: loginName, pin: loginPin }),
+      body: JSON.stringify({ name: loginName, phone: loginPhone, pin: loginPin }),
     });
     const data = await response.json() as { user?: LearningUser; message?: string };
     setLoginLoading(false);
@@ -157,7 +165,7 @@ export function MissionLab() {
     setUser(data.user);
     setLoginOpen(false);
     await loadSession();
-    if (success) await persistProgress(true, false);
+    if (success) await persistProgress(false);
   }
 
   async function logout() {
@@ -225,7 +233,7 @@ export function MissionLab() {
           <div className="editor-tip"><Bot size={18} /><p><b>루미:</b> {mission.coach}</p></div>
           <div className="editor-actions">
             <button type="button" className="button button-ghost" onClick={resetMission}><RotateCcw size={17} /> 초기화</button>
-            {user && <button type="button" className="button button-ghost" onClick={() => void persistProgress(false, false)} disabled={saveState === "saving"}><Save size={17} /> 코드 저장</button>}
+            {user && <button type="button" className="button button-ghost" onClick={() => void persistProgress(false)} disabled={saveState === "saving"}><Save size={17} /> 코드 저장</button>}
             <button type="button" className="button button-primary" onClick={runMission} disabled={running}><Play size={17} fill="currentColor" /> {running ? "실행 중..." : "코드 실행"}</button>
           </div>
         </section>
@@ -256,16 +264,21 @@ export function MissionLab() {
             <button className="dialog-close" type="button" onClick={() => setLoginOpen(false)} aria-label="로그인 창 닫기"><X size={19} /></button>
             <span className="login-icon"><UserRound size={24} /></span>
             <div className="panel-kicker">STUDENT LOGIN</div>
-            <h2 id="login-title">학습 기록을 이어가요</h2>
-            <p>로그인하면 완료 단계, 작성 코드와 경험치가 안전하게 저장됩니다.</p>
-            <div className="demo-credential"><span>테스트 계정</span><b>김하늘</b><i>2580</i></div>
-            <form onSubmit={handleLogin}>
-              <label>한글 이름 3글자<input value={loginName} onChange={(event) => setLoginName(event.target.value)} maxLength={3} pattern="[가-힣]{3}" required autoComplete="username" /></label>
-              <label>숫자 비밀번호 4자리<input value={loginPin} onChange={(event) => setLoginPin(event.target.value.replace(/\D/g, ""))} maxLength={4} pattern="\d{4}" required type="password" inputMode="numeric" autoComplete="current-password" /></label>
+            <h2 id="login-title">{authMode === "signup" ? "새 학습 기록을 만들어요" : "학습 기록을 이어가요"}</h2>
+            <p>{authMode === "signup" ? "휴대폰 번호는 서비스 안에서 고유한 로그인 번호로 사용됩니다." : "휴대폰 번호와 PIN으로 저장한 단계부터 이어가세요."}</p>
+            <div className="auth-mode-tabs" role="tablist" aria-label="계정 메뉴">
+              <button type="button" role="tab" aria-selected={authMode === "login"} onClick={() => { setAuthMode("login"); setLoginError(""); }}>로그인</button>
+              <button type="button" role="tab" aria-selected={authMode === "signup"} onClick={() => { setAuthMode("signup"); setLoginError(""); }}>회원가입</button>
+            </div>
+            <form onSubmit={handleAuth}>
+              {authMode === "signup" && <label>이름 또는 닉네임<input value={loginName} onChange={(event) => setLoginName(event.target.value)} minLength={2} maxLength={20} pattern="[가-힣a-zA-Z0-9 ]{2,20}" required autoComplete="name" /></label>}
+              <label>휴대폰 번호<input value={loginPhone} onChange={(event) => setLoginPhone(event.target.value.replace(/[^\d+\- ()]/g, ""))} minLength={10} maxLength={20} required type="tel" inputMode="tel" autoComplete="tel" placeholder="010-1234-5678" /></label>
+              <label>숫자 PIN 4자리<input value={loginPin} onChange={(event) => setLoginPin(event.target.value.replace(/\D/g, ""))} maxLength={4} pattern="\d{4}" required type="password" inputMode="numeric" autoComplete={authMode === "signup" ? "new-password" : "current-password"} /></label>
+              {authMode === "signup" && <label>PIN 4자리 확인<input value={pinConfirm} onChange={(event) => setPinConfirm(event.target.value.replace(/\D/g, ""))} maxLength={4} pattern="\d{4}" required type="password" inputMode="numeric" autoComplete="new-password" /></label>}
               {loginError && <div className="login-error" role="alert">{loginError}</div>}
-              <button className="button button-primary" type="submit" disabled={loginLoading}><LogIn size={17} /> {loginLoading ? "확인 중..." : "로그인하고 저장"}</button>
+              <button className="button button-primary" type="submit" disabled={loginLoading}><LogIn size={17} /> {loginLoading ? "확인 중..." : authMode === "signup" ? "회원가입하고 시작" : "로그인하고 이어하기"}</button>
             </form>
-            <small>이 계정은 기능 테스트용 데모 계정입니다.</small>
+            <small>SMS 인증 없이 서비스 내 중복 번호만 확인합니다.</small>
           </section>
         </div>
       )}

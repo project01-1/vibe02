@@ -1,5 +1,5 @@
 {
-  "name": "site-creator-vinext-starter",
+  "name": "python-future-lab",
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@11.9.0",
@@ -15,10 +15,14 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "db:generate": "drizzle-kit generate"
+    "supabase": "supabase",
+    "db:push": "supabase db push",
+    "db:lint": "supabase db lint --linked",
+    "db:types": "supabase gen types typescript --linked --schema public"
   },
   "dependencies": {
-    "drizzle-orm": "0.45.2",
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.112.2",
     "lucide-react": "^1.28.0",
     "next": "16.2.6",
     "react": "19.2.6",
@@ -37,11 +41,11 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",
     "@vitejs/plugin-rsc": "0.5.26",
-    "drizzle-kit": "0.31.10",
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.6",
     "jsdom": "^30.0.1",
     "react-server-dom-webpack": "19.2.6",
+    "supabase": "2.113.0",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
     "vinext": "0.0.50",
