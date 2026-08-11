@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-11 Vercel Production 검증
+
+- Supabase 공개 환경변수와 Production·Preview 민감 환경변수를 `vibe02`에 연결했다.
+- 회원가입, 휴대폰 번호 중복 차단, 미션 완료, XP·코드 저장, 재로그인 복원을 Production에서 검증했다.
+- Windows PowerShell 입력 시 환경변수 앞에 붙을 수 있는 BOM과 공백을 서버 설정에서 제거한다.
+
 ## 2026-08-11 — Supabase 영구 인증·진도 저장
 
 - 서울 리전의 Python Future Lab 프로젝트에 PostgreSQL 스키마·RLS·초기 미션을 적용했다.

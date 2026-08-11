@@ -29,7 +29,7 @@
 
 ## 다음 우선순위
 
-- [ ] Vercel Supabase 비밀 환경변수 등록과 프로덕션 E2E
+- [x] Vercel Supabase 비밀 환경변수 등록과 프로덕션 E2E
 - [ ] 성공 결과 저장과 학생 대시보드 이어하기
 - [ ] Playwright 모바일/태블릿/데스크톱 E2E
 
