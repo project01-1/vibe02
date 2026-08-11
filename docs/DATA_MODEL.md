@@ -2,7 +2,8 @@
 
 ## 현재 Supabase 구현
 
-- Supabase Auth의 `auth.users.phone`을 정규화된 고유 로그인 ID로 사용한다.
+- Supabase Auth의 `auth.users.phone`은 내부 인증 ID로 유지하고 `profiles.phone_e164`에 정규화해 연결한다.
+- `profiles.display_name`은 학생이 로그인에 사용하는 서비스 내 고유 이름이다.
 - `profiles`, `learning_paths`, `missions`, `mission_steps`, `user_mission_progress`, `badges`, `user_badges`를 PostgreSQL에 저장한다.
 - `auth_rate_limits`는 로그인 실패와 임시 잠금을 서버에서 관리한다.
 - 진도와 XP는 `save_mission_progress` RPC가 원자적으로 저장한다.

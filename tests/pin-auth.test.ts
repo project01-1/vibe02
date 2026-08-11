@@ -7,6 +7,14 @@ beforeAll(() => {
 });
 
 describe("phone and PIN credentials", () => {
+  it("normalizes a student login name", async () => {
+    const { normalizeStudentName } = await import("../lib/server/pin-auth");
+    expect(normalizeStudentName("  김미래  ")).toBe("김미래");
+    expect(normalizeStudentName("미래  학생")).toBe("미래 학생");
+    expect(normalizeStudentName("한")).toBeNull();
+    expect(normalizeStudentName("학생_%")).toBeNull();
+  });
+
   it("normalizes a Korean mobile phone number to E.164", async () => {
     const { normalizeKoreanPhone } = await import("../lib/server/pin-auth");
     expect(normalizeKoreanPhone("010-1234-5678")).toBe("+821012345678");

@@ -56,8 +56,8 @@ export default function Home() {
             <a href="#roadmap">탐험 지도</a>
           </nav>
           <div className="header-actions">
-            <Link className="text-button" href="/mission">로그인</Link>
-            <Link className="button button-small button-outline" href="/mission">무료 체험</Link>
+            <Link className="text-button" href="/login">로그인</Link>
+            <Link className="button button-small button-outline" href="/signup">회원가입</Link>
           </div>
         </div>
       </header>
@@ -142,7 +142,7 @@ export default function Home() {
             <span><Check size={15} /> 경험치와 배지 획득</span>
             <span><Check size={15} /> 다음 학습 지점에서 이어하기</span>
           </div>
-          <Link className="button button-light" href="/mission">로그인하고 기록 저장 <ArrowRight size={17} /></Link>
+          <Link className="button button-light" href="/login">로그인하고 기록 저장 <ArrowRight size={17} /></Link>
         </div>
       </section>
 

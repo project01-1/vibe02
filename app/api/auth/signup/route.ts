@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { assertLoginAllowed, clearLoginFailures, recordLoginFailure } from "@/lib/server/auth-rate-limit";
-import { deriveRateLimitKey, deriveSupabasePassword, normalizeKoreanPhone } from "@/lib/server/pin-auth";
+import { deriveRateLimitKey, deriveSupabasePassword, normalizeKoreanPhone, normalizeStudentName } from "@/lib/server/pin-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -14,7 +14,8 @@ const signupSchema = z.object({
 export async function POST(request: Request) {
   const parsed = signupSchema.safeParse(await request.json().catch(() => null));
   const phone = parsed.success ? normalizeKoreanPhone(parsed.data.phone) : null;
-  if (!parsed.success || !phone) {
+  const name = parsed.success ? normalizeStudentName(parsed.data.name) : null;
+  if (!parsed.success || !phone || !name) {
     return NextResponse.json({ message: "이름, 휴대폰 번호와 숫자 4자리 PIN을 확인해 주세요." }, { status: 400 });
   }
 
@@ -28,12 +29,22 @@ export async function POST(request: Request) {
     );
   }
 
+  const { data: existingName } = await admin
+    .from("profiles")
+    .select("id")
+    .ilike("display_name", name)
+    .maybeSingle();
+  if (existingName) {
+    await recordLoginFailure(admin, rateKey);
+    return NextResponse.json({ message: "이미 사용 중인 학생 이름이에요." }, { status: 409 });
+  }
+
   const password = await deriveSupabasePassword(phone, parsed.data.pin);
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     phone,
     password,
     phone_confirm: true,
-    user_metadata: { display_name: parsed.data.name },
+    user_metadata: { display_name: name },
   });
 
   if (createError) {
@@ -56,6 +67,6 @@ export async function POST(request: Request) {
   await clearLoginFailures(admin, rateKey);
   const { data: profile } = await admin.from("profiles").select("display_name, total_xp").eq("id", session.user.id).single();
   return NextResponse.json({
-    user: { id: session.user.id, displayName: profile?.display_name ?? parsed.data.name, totalXp: profile?.total_xp ?? 0 },
+    user: { id: session.user.id, displayName: profile?.display_name ?? name, totalXp: profile?.total_xp ?? 0 },
   }, { status: 201 });
 }

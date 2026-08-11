@@ -23,7 +23,8 @@
 
 - [x] Python Future Lab 프로젝트 연결과 migration 적용
 - [x] profiles/learning_paths/missions/progress/badges 스키마와 RLS
-- [x] 이름·고유 휴대폰 번호·4자리 PIN 회원가입/로그인
+- [x] 이름·고유 휴대폰 번호·4자리 PIN 회원가입과 학생 이름·PIN 로그인
+- [x] 랜딩에서 접근 가능한 별도 로그인·회원가입 페이지
 - [x] 서버 미션 검증과 원자적 진도·XP 저장
 - [x] 생성 DB 타입과 Next.js Supabase 클라이언트
 

@@ -214,6 +214,7 @@ export type Database = {
           current_level: number
           display_name: string
           id: string
+          phone_e164: string | null
           role: Database["public"]["Enums"]["user_role"]
           total_xp: number
           updated_at: string
@@ -224,6 +225,7 @@ export type Database = {
           current_level?: number
           display_name: string
           id: string
+          phone_e164?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           total_xp?: number
           updated_at?: string
@@ -234,6 +236,7 @@ export type Database = {
           current_level?: number
           display_name?: string
           id?: string
+          phone_e164?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           total_xp?: number
           updated_at?: string

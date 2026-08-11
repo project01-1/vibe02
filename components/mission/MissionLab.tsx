@@ -47,7 +47,6 @@ export function MissionLab() {
   const [loginName, setLoginName] = useState("");
   const [loginPhone, setLoginPhone] = useState("");
   const [loginPin, setLoginPin] = useState("");
-  const [pinConfirm, setPinConfirm] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -146,10 +145,6 @@ export function MissionLab() {
   async function handleAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoginError("");
-    if (authMode === "signup" && loginPin !== pinConfirm) {
-      setLoginError("PIN 확인 값이 일치하지 않아요.");
-      return;
-    }
     setLoginLoading(true);
     const response = await fetch(authMode === "signup" ? "/api/auth/signup" : "/api/auth/login", {
       method: "POST",
@@ -265,20 +260,19 @@ export function MissionLab() {
             <span className="login-icon"><UserRound size={24} /></span>
             <div className="panel-kicker">STUDENT LOGIN</div>
             <h2 id="login-title">{authMode === "signup" ? "새 학습 기록을 만들어요" : "학습 기록을 이어가요"}</h2>
-            <p>{authMode === "signup" ? "휴대폰 번호는 서비스 안에서 고유한 로그인 번호로 사용됩니다." : "휴대폰 번호와 PIN으로 저장한 단계부터 이어가세요."}</p>
+            <p>{authMode === "signup" ? "이름과 휴대폰 번호, 숫자 PIN만 입력하면 바로 시작할 수 있어요." : "학생 이름과 숫자 4자리 PIN으로 저장한 단계부터 이어가세요."}</p>
             <div className="auth-mode-tabs" role="tablist" aria-label="계정 메뉴">
               <button type="button" role="tab" aria-selected={authMode === "login"} onClick={() => { setAuthMode("login"); setLoginError(""); }}>로그인</button>
               <button type="button" role="tab" aria-selected={authMode === "signup"} onClick={() => { setAuthMode("signup"); setLoginError(""); }}>회원가입</button>
             </div>
             <form onSubmit={handleAuth}>
-              {authMode === "signup" && <label>이름 또는 닉네임<input value={loginName} onChange={(event) => setLoginName(event.target.value)} minLength={2} maxLength={20} pattern="[가-힣a-zA-Z0-9 ]{2,20}" required autoComplete="name" /></label>}
-              <label>휴대폰 번호<input value={loginPhone} onChange={(event) => setLoginPhone(event.target.value.replace(/[^\d+\- ()]/g, ""))} minLength={10} maxLength={20} required type="tel" inputMode="tel" autoComplete="tel" placeholder="010-1234-5678" /></label>
+              <label>학생 이름<input value={loginName} onChange={(event) => setLoginName(event.target.value)} minLength={2} maxLength={20} pattern="[가-힣a-zA-Z0-9 ]{2,20}" required autoComplete="username" /></label>
+              {authMode === "signup" && <label>휴대폰 번호<input value={loginPhone} onChange={(event) => setLoginPhone(event.target.value.replace(/[^\d+\- ()]/g, ""))} minLength={10} maxLength={20} required type="tel" inputMode="tel" autoComplete="tel" placeholder="010-1234-5678" /></label>}
               <label>숫자 PIN 4자리<input value={loginPin} onChange={(event) => setLoginPin(event.target.value.replace(/\D/g, ""))} maxLength={4} pattern="\d{4}" required type="password" inputMode="numeric" autoComplete={authMode === "signup" ? "new-password" : "current-password"} /></label>
-              {authMode === "signup" && <label>PIN 4자리 확인<input value={pinConfirm} onChange={(event) => setPinConfirm(event.target.value.replace(/\D/g, ""))} maxLength={4} pattern="\d{4}" required type="password" inputMode="numeric" autoComplete="new-password" /></label>}
               {loginError && <div className="login-error" role="alert">{loginError}</div>}
               <button className="button button-primary" type="submit" disabled={loginLoading}><LogIn size={17} /> {loginLoading ? "확인 중..." : authMode === "signup" ? "회원가입하고 시작" : "로그인하고 이어하기"}</button>
             </form>
-            <small>SMS 인증 없이 서비스 내 중복 번호만 확인합니다.</small>
+            <small>{authMode === "signup" ? "학생 이름과 휴대폰 번호의 중복 여부를 확인합니다." : "휴대폰 번호 입력 없이 간단히 로그인합니다."}</small>
           </section>
         </div>
       )}

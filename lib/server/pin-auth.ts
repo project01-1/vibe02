@@ -4,6 +4,7 @@ import { getPinPepper } from "../supabase/config";
 const PHONE_PATTERN = /^010\d{8}$/;
 const INTERNATIONAL_PHONE_PATTERN = /^\+8210\d{8}$/;
 const PIN_PATTERN = /^\d{4}$/;
+const STUDENT_NAME_PATTERN = /^[가-힣a-zA-Z0-9 ]{2,20}$/;
 
 function toBase64Url(bytes: Uint8Array) {
   let binary = "";
@@ -21,6 +22,11 @@ export function normalizeKoreanPhone(input: string) {
 
 export function isFourDigitPin(pin: string) {
   return PIN_PATTERN.test(pin);
+}
+
+export function normalizeStudentName(input: string) {
+  const normalized = input.trim().replace(/\s+/g, " ");
+  return STUDENT_NAME_PATTERN.test(normalized) ? normalized : null;
 }
 
 async function hmac(value: string) {
@@ -42,8 +48,8 @@ export async function deriveSupabasePassword(phone: string, pin: string) {
   return `pfl_${await hmac(`password:${phone}:${pin}`)}`;
 }
 
-export async function deriveRateLimitKey(phone: string, request: Request) {
+export async function deriveRateLimitKey(identity: string, request: Request) {
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   const ip = forwarded || request.headers.get("x-real-ip") || "unknown";
-  return hmac(`rate-limit:${phone}:${ip}`);
+  return hmac(`rate-limit:${identity.toLocaleLowerCase("ko-KR")}:${ip}`);
 }
