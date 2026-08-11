@@ -11,6 +11,7 @@
 - Vercel의 `DEPLOYMENT_NOT_FOUND` 원인을 재현하고 Cloudflare 전용 빌드를 Next.js 네이티브 빌드로 전환했다.
 - `vercel.json`을 추가하고 기본 개발·빌드·실행 명령을 Next.js 기준으로 변경했다.
 - D1 의존 로그인 API를 Vercel 호환 HMAC 서명 쿠키 저장 방식으로 변경했다.
+- Vercel의 pnpm 공급망 정책에 맞춰 필수 네이티브 빌드 패키지를 명시적으로 승인하고 Node.js를 22.x로 고정했다.
 
 - 랜딩 첫 화면을 미래형 실험실 콘셉트의 코드 기반 모션그래픽으로 교체했다.
 - 블록 시퀀스, 입자 에너지 스트림, CSS 로봇, Python 코드 타이핑, 포인터 패럴랙스를 추가했다.
